@@ -14,11 +14,23 @@ android {
         versionName '1.1.0'
     }
 
+    // Firma stabile se il workflow passa la chiave (segreti del repository); altrimenti la chiave di debug.
+    def ksFile = System.getenv('KEYSTORE_FILE')
+    if (ksFile) {
+        signingConfigs {
+            release {
+                storeFile file(ksFile)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
-            // firmato con la chiave di debug: installabile a mano, senza Play Store
-            signingConfig signingConfigs.debug
+            signingConfig ksFile ? signingConfigs.release : signingConfigs.debug
         }
     }
 

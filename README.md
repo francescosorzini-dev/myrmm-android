@@ -14,3 +14,16 @@ App che fa segnalare un telefono Android alla console **myrmm** (inventario, sta
 Il workflow `.github/workflows/build.yml` compila a ogni push su `main` e pubblica `myrmm-android.apk` nella release `latest`. Se la compilazione fallisce, gli errori compaiono come annotazioni del run e il log completo è nell'artefatto `build-log`.
 
 La firma usa la chiave di debug del runner, tenuta in cache: se la cache scade, l'APK successivo avrà un'altra firma e va installato dopo aver disinstallato il precedente.
+
+## Aggiornamenti e firma stabile
+
+L'app mostra «Aggiornamento disponibile» quando il server pubblica una versione più recente (file `apk-version.txt` accanto all'APK). L'installazione va confermata a mano sul telefono e riesce solo se la firma è la stessa dell'APK installato.
+
+Per una firma che non cambia mai, genera la chiave una sola volta sul tuo computer e conservala:
+
+```
+keytool -genkeypair -v -keystore myrmm.jks -alias myrmm -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 myrmm.jks   # incolla il risultato nel segreto KEYSTORE_B64
+```
+
+Nelle impostazioni del repository (Settings → Secrets and variables → Actions) crea `KEYSTORE_B64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` e `KEY_PASSWORD`. Il workflow li usa se presenti; altrimenti ricade sulla chiave di debug in cache. Non pubblicare mai il file `.jks`.

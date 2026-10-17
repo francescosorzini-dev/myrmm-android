@@ -36,8 +36,25 @@ jobs:
           path: ~/.android/debug.keystore
           key: debug-keystore-v1
 
+      - name: Chiave di firma stabile (se nei segreti)
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/myrmm.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/myrmm.jks" >> "$GITHUB_ENV"
+            echo "Firma con la chiave dei segreti"
+          else
+            echo "Nessuna chiave nei segreti: firma con la chiave di debug in cache"
+          fi
+
       - name: Compila
         shell: bash
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle --no-daemon --console=plain assembleRelease 2>&1 | tee build.log
 
       - name: Errori come annotazioni

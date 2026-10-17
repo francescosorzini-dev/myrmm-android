@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /** Impostazioni del telefono: indirizzo del server, token del cliente, nome, intervallo. */
 final class Config {
-    static final String APP_VERSION = "1.2.0";
+    static final String APP_VERSION = "1.2.1";
     static final int MIN_INTERVAL = 15; // minuti: il minimo di JobScheduler per i lavori periodici
 
     private Config() {}
@@ -28,10 +28,29 @@ final class Config {
         SharedPreferences sp = p(c);
         String id = sp.getString("id", "");
         if (id.isEmpty()) {
-            id = "apk-" + UUID.randomUUID().toString().replace("-", "");
+            id = "apk-" + stableSuffix(c);
             sp.edit().putString("id", id).apply();
         }
         return id;
+    }
+
+    /**
+     * Derivato dall'Android ID: dopo una disinstallazione e reinstallazione il telefono ritrova lo stesso device nella console;
+     * dopo un ripristino di fabbrica l'Android ID cambia e il telefono risulta nuovo. Senza Android ID (o con il valore noto
+     * difettoso) si usa un codice casuale.
+     */
+    private static String stableSuffix(Context c) {
+        try {
+            String aid = android.provider.Settings.Secure.getString(c.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+            if (aid != null && aid.length() >= 8 && !"9774d56d682e549c".equals(aid)) {
+                java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                byte[] h = md.digest(("myrmm|" + c.getPackageName() + "|" + aid).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                StringBuilder b = new StringBuilder();
+                for (int i = 0; i < 16; i++) b.append(String.format(java.util.Locale.ROOT, "%02x", h[i]));
+                return b.toString();
+            }
+        } catch (Exception ignore) { /* si ripiega sul casuale */ }
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
     static void save(Context c, String url, String token, String name, int every, boolean wipe) {

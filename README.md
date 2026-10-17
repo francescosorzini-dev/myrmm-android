@@ -7,7 +7,7 @@ App che fa segnalare un telefono Android alla console **myrmm** (inventario, sta
 - **Cosa invia**: modello, produttore, versione di Android e livello patch di sicurezza, batteria, spazio, indirizzo IP, stato dell'amministratore.
 - **Cosa riceve**: comandi che la console mette in coda (blocca schermo, ripristino, ping). Il telefono li esegue al check-in successivo (al massimo ogni intervallo; minimo 15 minuti, limite di Android per i lavori periodici).
 - **Blocco e ripristino** richiedono di attivare nell'app l'*amministratore del dispositivo*; il ripristino richiede anche la spunta «Consenti il ripristino». Senza, i comandi falliscono e la console lo mostra.
-- **Sicurezza**: solo HTTPS; il token è del cliente, l'identificativo del telefono è casuale e resta sul telefono.
+- **Sicurezza**: solo HTTPS; il token è del cliente, l'identificativo del telefono (dalla 1.2.1) è un hash dell'Android ID e del nome del pacchetto: non rivela l'Android ID, sopravvive a disinstallazione e reinstallazione (stessa chiave di firma) e cambia dopo un ripristino di fabbrica, quando il telefono risulta nuovo. Un telefono già registrato conserva l'id che aveva.
 
 ## Compilazione
 

@@ -62,7 +62,7 @@ final class Checkin {
                     done.put(r);
                     n++;
                 }
-                JSONObject again = info(c);
+                JSONObject again = info(c, true);
                 again.put("done", done);
                 try { post(base, again); } catch (Exception ignore) { /* il prossimo check-in lo ripeterà */ }
             }
@@ -77,7 +77,9 @@ final class Checkin {
         }
     }
 
-    static JSONObject info(Context c) throws Exception {
+    static JSONObject info(Context c) throws Exception { return info(c, false); }
+
+    static JSONObject info(Context c, boolean force) throws Exception {
         JSONObject o = new JSONObject();
         o.put("token", Config.token(c));
         o.put("id", Config.id(c));
@@ -108,6 +110,12 @@ final class Checkin {
         } catch (Exception ignore) { /* spazio non disponibile */ }
         String ip = localIp(c);
         if (!ip.isEmpty()) o.put("ip", ip);
+        Details.live(c, o);
+        long now = System.currentTimeMillis();
+        if (force || now - Config.detailsAt(c) > 6L * 3600 * 1000) {   // dati stabili ed elenco app: ogni 6 ore (o su richiesta)
+            o.put("details", Details.full(c));
+            Config.setDetailsAt(c, now);
+        }
         return o;
     }
 

@@ -10,8 +10,8 @@ android {
         applicationId 'it.myrmm.mobile'
         minSdk 26
         targetSdk 34
-        versionCode 2
-        versionName '1.1.0'
+        versionCode 3
+        versionName '1.2.0'
     }
 
     // Firma stabile se il workflow passa la chiave (segreti del repository); altrimenti la chiave di debug.

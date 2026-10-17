@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /** Impostazioni del telefono: indirizzo del server, token del cliente, nome, intervallo. */
 final class Config {
-    static final String APP_VERSION = "1.1.0";
+    static final String APP_VERSION = "1.2.0";
     static final int MIN_INTERVAL = 15; // minuti: il minimo di JobScheduler per i lavori periodici
 
     private Config() {}
@@ -65,6 +65,8 @@ final class Config {
         p(c).edit().putString("status", s).putLong("status_at", System.currentTimeMillis()).apply();
     }
 
+    static long detailsAt(Context c) { return p(c).getLong("details_at", 0); }
+    static void setDetailsAt(Context c, long t) { p(c).edit().putLong("details_at", t).apply(); }
     static String status(Context c) { return p(c).getString("status", ""); }
     static long statusAt(Context c) { return p(c).getLong("status_at", 0); }
 }

@@ -24,7 +24,8 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     private EditText url, token, name, every;
     private CheckBox wipe;
-    private TextView status, admin;
+    private TextView status, admin, update;
+    private Button updateBtn;
     private final Handler ui = new Handler(Looper.getMainLooper());
 
     private int dp(int v) { return Math.round(v * getResources().getDisplayMetrics().density); }
@@ -107,6 +108,14 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { battery(); }
         }));
 
+        update = new TextView(this);
+        update.setPadding(0, dp(12), 0, 0);
+        col.addView(update);
+        updateBtn = button("Scarica l'aggiornamento", new View.OnClickListener() {
+            @Override public void onClick(View v) { download(); }
+        });
+        col.addView(updateBtn);
+
         col.addView(label("Ultimo invio"));
         status = new TextView(this);
         col.addView(status);
@@ -188,6 +197,11 @@ public class MainActivity extends Activity {
     private void refresh() {
         String s = Config.status(this);
         status.setText(s.isEmpty() ? "nessun invio ancora" : Checkin.when(Config.statusAt(this)) + " · " + s);
+        String uv = Config.updateVer(this);
+        boolean has = !uv.isEmpty() && Config.newer(uv, Config.APP_VERSION) && Config.updateUrl(this).toLowerCase().startsWith("https://");
+        update.setText(has ? "Aggiornamento disponibile: " + uv + " (installata " + Config.APP_VERSION + "). Scaricalo e installalo sopra questa versione." : "");
+        update.setVisibility(has ? View.VISIBLE : View.GONE);
+        updateBtn.setVisibility(has ? View.VISIBLE : View.GONE);
         admin.setText(Checkin.admin(this) ? "Amministratore attivo: la console può bloccare lo schermo." : "Amministratore non attivo: blocco e ripristino non disponibili.");
     }
 
@@ -202,6 +216,12 @@ public class MainActivity extends Activity {
         DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(DEVICE_POLICY_SERVICE);
         if (dpm != null) dpm.removeActiveAdmin(new ComponentName(this, AdminReceiver.class));
         refresh();
+    }
+
+    private void download() {
+        String u = Config.updateUrl(this);
+        if (!u.toLowerCase().startsWith("https://")) return;
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u)));
     }
 
     private void battery() {

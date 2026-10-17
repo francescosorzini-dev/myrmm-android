@@ -46,6 +46,8 @@ final class Checkin {
             }
             JSONObject body = info(c);
             JSONObject resp = post(base, body);
+            JSONObject upd = resp.optJSONObject("apk");
+            if (upd != null) Config.setUpdate(c, upd.optString("version"), upd.optString("url"));
             JSONArray cmds = resp.optJSONArray("commands");
             int n = 0;
             if (cmds != null && cmds.length() > 0) {

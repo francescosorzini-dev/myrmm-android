@@ -1,0 +1,65 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: SDK Android (piattaforma 34)
+        shell: bash
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0" > /dev/null
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      # La stessa chiave di firma a ogni build: l'APK nuovo si installa sopra il vecchio senza disinstallare.
+      - name: Chiave di firma (cache)
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: debug-keystore-v1
+
+      - name: Compila
+        shell: bash
+        run: gradle --no-daemon --console=plain assembleRelease 2>&1 | tee build.log
+
+      - name: Errori come annotazioni
+        if: failure()
+        shell: bash
+        run: |
+          awk '/What went wrong:/{f=6} f>0{printf "%s%%0A", substr($0,1,300); f--; if(f==0){print ""}}' build.log | head -3 | while read -r l; do echo "::error title=Gradle::$l"; done
+          grep -E "error:|\.java:[0-9]+|^e: " build.log | head -12 | while read -r l; do echo "::error title=Compilazione::${l:0:400}"; done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - name: Pubblica l'APK (release "latest")
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk myrmm-android.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest myrmm-android.apk --title "myrmm per Android" --notes "APK firmato con la chiave di debug del workflow. Installalo a mano (consenti le app da fonti sconosciute). Commit ${GITHUB_SHA::7}."
